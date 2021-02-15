@@ -1,7 +1,41 @@
-import Head from 'next/head'
-import styles from '../styles/Home.module.css'
+import Head from "next/head";
+import { useState } from "react";
+import styles from "../styles/Home.module.css";
+import useSWR from "swr";
+
+const fetcher = (...args) => fetch(...args).then((res) => res.json());
 
 export default function Home() {
+  const [status, setStatus] = useState();
+  const url = "/api/status";
+  const { data: result, error } = useSWR(url, fetcher, {
+    refreshInterval: 5000,
+  });
+
+  if (result && result.result.status !== status) {
+    setStatus(result.result.status);
+  }
+
+  if (result) {
+    if (
+      Number(result.result.description.substring(21, 24)) < 31 &&
+      Number(result.result.description.substring(21, 24)) > 25 &&
+      result.result.status === "error"
+    ) {
+      console.log("Status à error depuis au moins 30 sec");
+    }
+    if (
+      Number(result.result.description.substring(21, 24)) < 61 &&
+      Number(result.result.description.substring(21, 24)) > 55 &&
+      result.result.status === "ok"
+    ) {
+      console.log("Status à ok de nouveau");
+    }
+  }
+
+  if (error) return <h1>Something went wrong!</h1>;
+  if (!result) return <h1>Loading...</h1>;
+
   return (
     <div className={styles.container}>
       <Head>
@@ -9,57 +43,16 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
-
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
-      </footer>
+      <main className={styles.main}>Status: {status}</main>
     </div>
-  )
+  );
 }
+/* export async function getServerSideProps(context) {
+  const statusUrl = await fetch(
+    `http://localhost:3000/api/status`,
+  );
+  
+  const status = await statusUrl.json();
+
+  return { props: { status } };
+} */
